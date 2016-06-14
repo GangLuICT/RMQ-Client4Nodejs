@@ -32,24 +32,39 @@ var MQPullConsumer = function(groupName, namesrvAddr) {
 MQPullConsumer.prototype.init = function () {
     logger.info('Initializing consumer ' + this.instanceName + ' ...');
     this.consumer = new DefaultMQPullConsumer(this.groupName);   //创建实例
-    this.consumer.setNamesrvAddr(this.namesrvAddr);
-    this.consumer.setInstanceName(this.instanceName);
+    this.consumer.setNamesrvAddrSync(this.namesrvAddr);
+    this.consumer.setInstanceNameSync(this.instanceName);
 };
+
+//重要的函数都是用同步的形式
 
 MQPullConsumer.prototype.start = function () {
     logger.info('Starting consumer ' + this.instanceName + ' ...');
-    this.consumer.start();
+    this.consumer.startSync();  //sync
 };
-
 
 MQPullConsumer.prototype.shutdown = function () {
     logger.info('Shutting down consumer ' + this.instanceName + ' ...');
-    this.consumer.shutdown();
+    this.consumer.shutdownSync();   //sync
 };
 
-MQPullConsumer.prototype.pullBlockIfNotFound = function (mq, subExpression, offset, maxNums) {
-    var pullResult = this.consumer.pullBlockIfNotFound(mq, subExpression, this.getMessageQueueOffset(mq), maxNums);
-    return pullResult;
+//同步的方式调用,外部函数名称还是叫pullBlockIfNotFound
+//调用函数后加Sync
+MQPullConsumer.prototype.pullBlockIfNotFound = function (mq, subExpression, offset, maxNums, callback) {
+    var pullResult = this.consumer.pullBlockIfNotFoundSync(mq, subExpression, this.getMessageQueueOffset(mq), maxNums);
+    callback && callback(pullResult);
+};
+
+//异步的方式调用,外部函数名称改成了pullBlockIfNotFoundAsync
+MQPullConsumer.prototype.pullBlockIfNotFoundAsync = function (mq, subExpression, offset, maxNums, callback) {
+    this.consumer.pullBlockIfNotFound(mq, subExpression, this.getMessageQueueOffset(mq), maxNums, function(err, result){
+        if (err) {
+            logger.error('Some err occurs when pulling messages. Please look up the exceptions reported!');
+            callback && callback(undefined);
+        } else {
+            callback && callback(result);
+        }
+    });
 };
 
 MQPullConsumer.prototype.fetchSubscribeMessageQueues = function (topic) {

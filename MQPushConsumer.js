@@ -31,38 +31,38 @@ var MQPushConsumer = function(groupName, namesrvAddr){
 MQPushConsumer.prototype.init = function () {
     logger.info('Initializing consumer ' + this.instanceName + ' ...');
     this.consumer = new DefaultMQPushConsumer(this.groupName);   //创建实例
-    this.consumer.setNamesrvAddr(this.namesrvAddr);
-    this.consumer.setInstanceName(this.instanceName);
+    this.consumer.setNamesrvAddrSync(this.namesrvAddr);
+    this.consumer.setInstanceNameSync(this.instanceName);
 };
 
 MQPushConsumer.prototype.start = function () {
     logger.info('Starting consumer ' + this.instanceName + ' ...');
-    this.consumer.start();
+    this.consumer.startSync();
 };
 
 MQPushConsumer.prototype.shutdown = function () {
     logger.info('Shutting down consumer ' + this.instanceName + ' ...');
-    this.consumer.shutdown();
+    this.consumer.shutdownSync();
 };
 
 MQPushConsumer.prototype.setMessageModel = function (messageModel) {
     logger.info('Setting message model of instance ' + this.instanceName + ' to ' + messageModel.toString());
     //this.consumer.setMessageModel(JObject(messageModel, "com.alibaba.rocketmq.common.protocol.heartbeat.MessageModel"))
-    this.consumer.setMessageModel(messageModel);
+    this.consumer.setMessageModelSync(messageModel);
 };
 
 MQPushConsumer.prototype.subscribe = function (topic, subExpression) {
-    this.consumer.subscribe(topic, subExpression);
+    this.consumer.subscribeSync(topic, subExpression);
 };
 
 MQPushConsumer.prototype.unsubscribe = function (topic) {
-    this.consumer.unsubscribe(topic);
+    this.consumer.unsubscribeSync(topic);
 };
 
 MQPushConsumer.prototype.setConsumeFromWhere = function (fromwhere) {
-    this.consumer.setConsumeFromWhere(fromwhere);
+    this.consumer.setConsumeFromWhereSync(fromwhere);
 };
 
 MQPushConsumer.prototype.registerMessageListener = function (listener) {
-    this.consumer.registerMessageListener(listener);
+    this.consumer.registerMessageListenerSync(listener);
 };

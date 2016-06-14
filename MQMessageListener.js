@@ -22,8 +22,9 @@ MessageListenerConcurrently.prototype.consumeMessage = function (msgs, context) 
     msgs.forEach(function (msg) {
         var topic = msg.getTopic();
         var tags = msg.getTags();
-        var bodybytes = new Buffer(msg.getBody());
-        var body = bodybytes.toString(settings.MsgBodyEncoding);  //byte to string
+        //var bodybytes = new Buffer(msg.getBody());
+        //var body = bodybytes.toString(settings.MsgBodyEncoding);  //byte to string
+        var body = msg.getBody().toString(settings.MsgBodyEncoding);
 
         logger.debug(msg.toString());
         // In Python 2.x, bytes is just an alias for str. 所以bytes解码时要注意了, msg.body.decode会出错(bytes没有decode方法)！
@@ -60,11 +61,11 @@ var MessageListenerOrderly = function () {
     this.consumeTimes = java.newInstanceSync("java.util.concurrent.atomic.AtomicLong", 0);
 };
 MessageListenerConcurrently.prototype.consumeMessage = function (msgs, context) {
-    context.setAutoCommit(false);
+    context.setAutoCommitSync(false);
     logger.debug(java.lang.Thread.currentThread().getName() + " Receive New Messages: " + msgs.toString())
     //TODO: msgs.toString()可能需要改成for msg in msgs: msg.toString()
 
-    self.consumeTimes.incrementAndGet();
+    self.consumeTimes.incrementAndGetSync();
     var consumeTimes = self.consumeTimes.get();
     //print consumeTimes
     //print type(consumeTimes)

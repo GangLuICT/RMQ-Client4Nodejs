@@ -39,6 +39,7 @@ consumer.subscribe("RMQTopicTest", "TagB");
 consumer.setConsumeFromWhere(ConsumeFromWhere['CONSUME_FROM_LAST_OFFSET']);
 
 consumer.registerMessageListener(msgListenerOrderlyProxy);
+//consumer.registerMessageListener(msgListenerConcurrentlyProxy);
 
 consumer.start();
 

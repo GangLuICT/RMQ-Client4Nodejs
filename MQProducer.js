@@ -41,9 +41,9 @@ MQProducer.prototype.init = function(callback) {
     logger.info('Initializing producer ' + self.instanceName + ' ...');
 
     self.producer = new DefaultMQProducer(self.groupName);   //创建实例
-    self.producer.setNamesrvAddr(self.namesrvAddr);
-    self.producer.setInstanceName(self.instanceName);
-    self.producer.setCompressMsgBodyOverHowmuch(parseInt(self.compressMsgBodyOverHowmuch));
+    self.producer.setNamesrvAddrSync(self.namesrvAddr);
+    self.producer.setInstanceNameSync(self.instanceName);
+    self.producer.setCompressMsgBodyOverHowmuchSync(parseInt(self.compressMsgBodyOverHowmuch));
 
     callback && callback();
 };
@@ -70,7 +70,7 @@ MQProducer.prototype.shutdown = function() {
 
     logger.info('Shutting down producer ' + self.instanceName + ' ...');
     // 同步调用stop
-    self.producer.stopSync()	// stop returns void
+    self.producer.shutdownSync()	// stop returns void
 };
 
 /**
