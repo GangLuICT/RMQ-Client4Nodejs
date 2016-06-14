@@ -7,7 +7,7 @@
 
 "use strict";
 
-var settings = require("../settings_MQ");   //配置信息
+var settings = require("./settings_MQ");   //配置信息
 var logger = settings.logger;
 var moment = require('moment'); //时间
 
@@ -24,13 +24,13 @@ var MQPushConsumer = function(groupName, namesrvAddr){
     this.consumer = undefined;      //初始化放在了init函数中
     this.groupName = groupName;
     this.namesrvAddr = namesrvAddr;
-    this.instanceName = moment().millisecond();  //毫秒值作为instance name
+    this.instanceName = moment().format("x");  //毫秒值作为instance name, 默认返回string
 };
 
 //"""批量设置一些基本项(为了尽可能少实现这些API接口,如以后有需要,可以逐个移出init)"""
 MQPushConsumer.prototype.init = function () {
     logger.info('Initializing consumer ' + this.instanceName + ' ...');
-    this.consumer = DefaultMQPushConsumer(this.groupName);   //创建实例
+    this.consumer = new DefaultMQPushConsumer(this.groupName);   //创建实例
     this.consumer.setNamesrvAddr(this.namesrvAddr);
     this.consumer.setInstanceName(this.instanceName);
 };

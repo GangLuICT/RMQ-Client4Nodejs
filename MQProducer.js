@@ -6,9 +6,13 @@
  */
 "use strict";
 
-var settings = require("../settings_MQ");   //配置信息
+var settings = require("./settings_MQ");   //配置信息
 var logger = settings.logger;
 var moment = require('moment'); //时间
+
+var java = require("java");
+
+var DefaultMQProducer = java.import('com.alibaba.rocketmq.client.producer.DefaultMQProducer');
 
 //需要注意的是node是支持同步/异步的,对于调用java内的函数,要根据情况选择是同步还是异步调用方式!
 
@@ -19,10 +23,10 @@ var moment = require('moment'); //时间
  * @constructor
  */
 var MQProducer = function (groupName, namesrvAddr){
-    this.producer = null;   //初始化放在了init函数中
+    this.producer = undefined;   //初始化放在了init函数中
     this.groupName = groupName;
     this.namesrvAddr = namesrvAddr;
-    this.instanceName = moment().millisecond(); //毫秒值作为instance name
+    this.instanceName = moment().format("x"); //毫秒值作为instance name，默认返回string
     this.compressMsgBodyOverHowmuch = 4096;     //消息压缩阈值
 };
 
@@ -36,10 +40,10 @@ MQProducer.prototype.init = function(callback) {
 
     logger.info('Initializing producer ' + self.instanceName + ' ...');
 
-    self.producer = DefaultMQProducer(self.groupName);   //创建实例
+    self.producer = new DefaultMQProducer(self.groupName);   //创建实例
     self.producer.setNamesrvAddr(self.namesrvAddr);
     self.producer.setInstanceName(self.instanceName);
-    self.producer.setCompressMsgBodyOverHowmuch(parInt(self.compressMsgBodyOverHowmuch));
+    self.producer.setCompressMsgBodyOverHowmuch(parseInt(self.compressMsgBodyOverHowmuch));
 
     callback && callback();
 };
@@ -49,36 +53,24 @@ MQProducer.prototype.init = function(callback) {
  * 批量设置一些基本项(为了尽可能少实现这些API接口,如以后有需要,可以逐个移出init)
  * @param {Function} callback the callback function
  */
-MQProducer.prototype.start = function (callback) {
+MQProducer.prototype.start = function () {
     var self = this;
 
     logger.info('Starting producer ' + self.instanceName + ' ...');
-    self.producer.start(function(err) {
-        if(err) {
-            logger.error('Starting producer failed! Instance name: ' + self.instanceName);
-        } else {
-            logger.info('Starting producer ' + self.instanceName + ' successfully!');
-        }
-        callback && callback(err);
-    });
+    // 同步调用start
+    self.producer.startSync();	// start returns void
 };
 
 /**
  * shutdown
  * @param {Function} callback the callback function
  */
-MQProducer.prototype.shutdown = function(callback) {
+MQProducer.prototype.shutdown = function() {
     var self = this;
 
     logger.info('Shutting down producer ' + self.instanceName + ' ...');
-    self.producer.stop(function(err) {
-        if(err) {
-            logger.error('Stopping producer failed! Instance name: ' + self.instanceName);
-        } else {
-            logger.info('Stopping producer ' + self.instanceName + ' successfully!');
-        }
-        callback && callback(err);
-    });
+    // 同步调用stop
+    self.producer.stopSync()	// stop returns void
 };
 
 /**
@@ -90,13 +82,15 @@ MQProducer.prototype.send = function(MQMsg, callback) {
     var self = this;
 
     logger.debug('Producer ' + self.instanceName + ' sending message: ' + MQMsg.tostr());
-    self.producer.send(MQMsg.msg, function(err){
+    // 异步调用模式下，callback的第一个参数是异常，第二个参数是调用的返回值
+    self.producer.send(MQMsg.msg, function(err, result){ // send returns SendResult
         if(err) {
-            logger.error('Stopping producer failed! Instance name: ' + self.instanceName);
+            logger.error('Sending message failed! Please look up the exception reported!');
+            logger.error(err);
         } else {
-            logger.info('Stopping producer ' + self.instanceName + ' successfully!');
+            logger.debug('Sending message successfully from instance ' + self.instanceName + ' .');
         }
-        callback && callback(err);
+        callback && callback(result);
     });
 };
 

@@ -14,7 +14,9 @@ var java = require("java");
 
 // Configure JVM
 java.classpath.push(settings.JAVA_EXT_DIRS);
-java.options.push(settings.JAVA_EXT_DIRS);
+settings.JVM_OPTIONS.forEach(function(opt){
+    java.options.push(opt);
+});
 
 // Import MQPullConsumer
 var MQM = require("../MQMessage");

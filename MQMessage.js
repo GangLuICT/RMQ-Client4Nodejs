@@ -26,7 +26,12 @@ var MQMessage = function(topic, tags, keys, body){
     this.tags = tags;
     this.keys = keys;
     this.body = body;
-    this.msg = new Message(this.topic, this.tags, this.keys, new Buffer(this.body, settings.MsgBodyEncoding)); //string to bytes
+    var byteArray = java.newArray("byte", this.body.split('').map(function(c) { return java.newByte(String.prototype.charCodeAt(c)); }));	//生成byte array的固定方式！
+    //var byteArray = new Buffer(this.body, settings.MsgBodyEncoding);	//Buffer方式不work
+    //sync methods:
+    this.msg = new Message(this.topic, this.tags, this.keys, byteArray); //string to bytes
+    //this.msg = java.newInstanceSync("com.alibaba.rocketmq.common.message.Message", this.topic, this.tags, this.keys, byteArray); //string to bytes
+    //async method: java.newInstance(className, [args...], callback);
 };
 
 MQMessage.prototype.tostr = function(){

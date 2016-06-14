@@ -7,7 +7,7 @@
 
 "use strict";
 
-var settings = require("../settings_MQ");   //配置信息
+var settings = require("./settings_MQ");   //配置信息
 var logger = settings.logger;
 var moment = require('moment'); //时间
 

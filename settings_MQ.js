@@ -43,16 +43,17 @@ var logger = new (winston.Logger)({
 /*
  * JAVA options
  */
-RMQClientJAR = '/home/deploy/rocketmq/alibaba-rocketmq/lib/';
-JAVA_EXT_DIRS = RMQClientJAR;
-JVM_OPTIONS = '-Xms32m -Xmx256m -mx256m -Xrs';
+var RMQClientJAR = '/home/deploy/rocketmq/alibaba-rocketmq/lib/';
+var JAVA_EXT_DIRS = RMQClientJAR;
+//JVM_OPTIONS = '-Xms32m -Xmx256m -mx256m -Xrs';
+var JVM_OPTIONS = ['-Xms32m', '-Xmx256m', '-Xrs', '-Djava.ext.dirs=' + RMQClientJAR];
 // the -Xrs flag will “reduce usage of operating-system signals by [the] Java virtual machine (JVM)”, to avoid issues when developing “applications that embed the JVM”
 
 /*
  * RocketMQ configurations
  */
-pullMaxNums = 32;
-MsgBodyEncoding = 'utf-8';
+var pullMaxNums = 32;
+var MsgBodyEncoding = 'utf-8';
 
 
 /*

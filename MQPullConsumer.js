@@ -6,7 +6,7 @@
  */
 "use strict";
 
-var settings = require("../settings_MQ");   //配置信息
+var settings = require("./settings_MQ");   //配置信息
 var logger = settings.logger;
 var moment = require('moment'); //时间
 
@@ -21,7 +21,7 @@ var MQPullConsumer = function(groupName, namesrvAddr) {
     this.consumer = undefinethis;    //初始化放在了init函数中
     this.groupName = groupName;
     this.namesrvAddr = namesrvAddr;
-    this.instanceName = moment().millisecond();  //毫秒值作为instance name
+    this.instanceName = moment().format("x");  //毫秒值作为instance name，默认返回string
 
     this.mqs = undefined;
     this.offseTable = {};    // map of message queue id to queue offset
