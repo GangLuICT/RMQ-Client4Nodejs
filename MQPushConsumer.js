@@ -66,3 +66,5 @@ MQPushConsumer.prototype.setConsumeFromWhere = function (fromwhere) {
 MQPushConsumer.prototype.registerMessageListener = function (listener) {
     this.consumer.registerMessageListenerSync(listener);
 };
+
+module.exports = MQPushConsumer;

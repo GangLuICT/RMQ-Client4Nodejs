@@ -18,7 +18,7 @@ var DefaultMQPullConsumer= java.import('com.alibaba.rocketmq.client.consumer.Def
 //var MessageQueue = java.import('com.alibaba.rocketmq.common.message.MessageQueue');
 
 var MQPullConsumer = function(groupName, namesrvAddr) {
-    this.consumer = undefinethis;    //初始化放在了init函数中
+    this.consumer = undefined;    //初始化放在了init函数中
     this.groupName = groupName;
     this.namesrvAddr = namesrvAddr;
     this.instanceName = moment().format("x");  //毫秒值作为instance name，默认返回string
@@ -50,9 +50,10 @@ MQPullConsumer.prototype.shutdown = function () {
 
 //同步的方式调用,外部函数名称还是叫pullBlockIfNotFound
 //调用函数后加Sync
-MQPullConsumer.prototype.pullBlockIfNotFound = function (mq, subExpression, offset, maxNums, callback) {
+MQPullConsumer.prototype.pullBlockIfNotFound = function (mq, subExpression, offset, maxNums) {
     var pullResult = this.consumer.pullBlockIfNotFoundSync(mq, subExpression, this.getMessageQueueOffset(mq), maxNums);
-    callback && callback(pullResult);
+    //callback && callback(pullResult);
+    return pullResult;
 };
 
 //异步的方式调用,外部函数名称改成了pullBlockIfNotFoundAsync
@@ -67,20 +68,23 @@ MQPullConsumer.prototype.pullBlockIfNotFoundAsync = function (mq, subExpression,
     });
 };
 
-MQPullConsumer.prototype.fetchSubscribeMessageQueues = function (topic) {
-    this.mqs = this.consumer.fetchSubscribeMessageQueues(topic);
+MQPullConsumer.prototype.fetchSubscribeMessageQueues = function (topic, callback) {
+    this.mqs = this.consumer.fetchSubscribeMessageQueuesSync(topic).toArraySync();
+    callback && callback();
 };
 
 //获取某个MQ中的当前消息的offset
-MQPullConsumer.prototype.getMessageQueueOffset = function () {
-    var haskey = this.offseTable.has_key(mq.queueId);
-    if (haskey)
-        return this.offseTable[mq.queueId];
-    else
+MQPullConsumer.prototype.getMessageQueueOffset = function (mq) {
+    var haskey = this.offseTable[mq.getQueueIdSync()];
+    if (haskey === undefined)
         return 0;
+    else
+        return haskey;
 };
 
 //设置某个MQ中的当前消息的offset(更新后的值)
-MQPullConsumer.prototype.putMessageQueueOffset = function () {
-    this.offseTable[mq.queueId] = offset;
+MQPullConsumer.prototype.putMessageQueueOffset = function (mq, offset) {
+    this.offseTable[mq.getQueueIdSync()] = offset;
 };
+
+module.exports = MQPullConsumer;

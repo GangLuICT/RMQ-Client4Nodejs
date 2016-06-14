@@ -7,6 +7,8 @@
 
 "use strict";
 
+var iconv = require('iconv-lite');
+
 var settings = require("../settings_MQ");
 var logger = settings.logger;
 
@@ -29,51 +31,64 @@ var consumer = new MQPullConsumer('MQClient4Python-Consumer', 'jfxr-7:9876;jfxr-
 consumer.init();
 consumer.start();
 
-consumer.fetchSubscribeMessageQueues("RMQTopicTest"); //获取所有消息队列,返回值存储到consumer.mqs
-//TODO:
-//    1. fetchSubscribeMessageQueues可能返回异常：Can not find Message Queue for this topic
-//       如果不存在Topic，则创建topic：createTopic(String key, String newTopic, int queueNum)
-//    2. MessageQueue的数目，如何确定的！
-//    3. PullConsumer没有ConsumeFromWhere这项设置
-
-while(true){
-    consumer.mqs.forEach(function(mq){
-        logger.debug("Pulling from message queue: " + str(mq.queueId));
-        while(true){
+//获取所有消息队列,返回值存储到consumer.mqs
+consumer.fetchSubscribeMessageQueues("RMQTopicTest", function(){
+    //TODO:
+    //    1. fetchSubscribeMessageQueues可能返回异常：Can not find Message Queue for this topic
+    //       如果不存在Topic，则创建topic：createTopic(String key, String newTopic, int queueNum)
+    //    2. MessageQueue的数目，如何确定的！
+    //    3. PullConsumer没有ConsumeFromWhere这项设置
+    logger.debug('After fetch subscribe messge queues: ' + consumer.mqs.length);
+    //while(true){
+        for (var mqid in consumer.mqs) {
+        //consumer.mqs.forEach(function(mq){
+            var mq = consumer.mqs[mqid];
+            logger.debug("Pulling from message queue: " + mq.getQueueIdSync());
             try {
-                // brokerSuspendMaxTimeMillis默认值是20s
-                consumer.pullBlockIfNotFound(mq, '', consumer.getMessageQueueOffset(mq), settings.pullMaxNums, function (pullResult) {
-                    if (pullResult) {
-                        consumer.putMessageQueueOffset(mq, pullResult.getNextBeginOffset());
-                        var pullStatus = PullStatus[str(pullResult.getPullStatus())];	// JAVA中的enum对应到Python中没有转换为Int，enum对象转换为string的时候是其枚举值的名字，而不是enum的值（0,1...）！
-                        if (pullStatus == PullStatus['FOUND']) {
-                            logger.debug('Found');
-                            logger.debug(pullResult.toString());
-                            var msgList = pullResult.getMsgFoundList();
-                            msgList.forEach(function (msg) {
-                                logger.debug(msg.toString());
-                                logger.debug("Message body: " + msg.getBody().toString(settings.MsgBodyEncoding));
-                                //TODO: 进一步分析pull下来的result
-                            });
-                        } else if (pullStatus == PullStatus['NO_NEW_MSG']) {
-                            logger.debug('NO_NEW_MSG');
-                            break;
-                        } else if (pullStatus == PullStatus['NO_MATCHED_MSG']) {
-                            logger.debug('NO_MATCHED_MSG');
-                        } else if (pullStatus == PullStatus['OFFSET_ILLEGAL']) {
-                            logger.debug('OFFSET_ILLEGAL');
+                while(true){
+                    // brokerSuspendMaxTimeMillis默认值是20s
+                    var pullResult = consumer.pullBlockIfNotFound(mq, '', consumer.getMessageQueueOffset(mq), settings.pullMaxNums);
+                    //consumer.pullBlockIfNotFoundAsync(mq, '', consumer.getMessageQueueOffset(mq), settings.pullMaxNums, function (pullResult) {
+                        if (pullResult) {
+                            consumer.putMessageQueueOffset(mq, pullResult.getNextBeginOffsetSync());
+                            var pullStatus = PullStatus[pullResult.getPullStatusSync().toString()];	// JAVA中的enum对应到Python中没有转换为Int，enum对象转换为string的时候是其枚举值的名字，而不是enum的值（0,1...）！
+                            if (pullStatus == PullStatus['FOUND']) {
+                                logger.debug('Found');
+                                logger.debug(pullResult.toString());
+                                var msgList = pullResult.getMsgFoundListSync().toArraySync();
+                                msgList.forEach(function (msg) {
+                                    logger.debug(msg.toString());
+                                    //logger.debug("Message body: " + new Buffer(msg.getBodySync()).toString(settings.MsgBodyEncoding));
+                                    logger.debug("Message body: " + iconv.decode(new Buffer(msg.getBodySync()), settings.MsgBodyEncoding));
+                                    //TODO: 进一步分析pull下来的result
+                                });
+                            } else if (pullStatus == PullStatus['NO_NEW_MSG']) {
+                                logger.debug('NO_NEW_MSG');
+                                break;
+                            } else if (pullStatus == PullStatus['NO_MATCHED_MSG']) {
+                                logger.debug('NO_MATCHED_MSG');
+                            } else if (pullStatus == PullStatus['OFFSET_ILLEGAL']) {
+                                logger.debug('OFFSET_ILLEGAL');
+                            } else {
+                                logger.error('Wrong pull status: ' + pullStatus.toString());
+                            }
                         } else {
-                            logger.error('Wrong pull status: ' + str(pullStatus));
+                            logger.debug('This pulling does not get any result!');
                         }
-                    } else {
-                        logger.debug('This pulling does not get any result!');
-                    }
-                });
+                    //});
+                }
             } catch(ex) {
-                logger.error(ex.cause.getMessageSync());
+                if (ex.cause)	// Exception from node-java
+                    logger.error(ex.cause.getMessageSync());
+                else
+                    logger.error(ex.name + ': ' + ex.message);
             }
-        }
-    });
-}
+        }//);
+    //}
+});
 
-consumer.shutdown();
+//while(true){
+//    setTimeout(function(){}, 1000);	//睡眠1秒
+//}
+
+//consumer.shutdown();

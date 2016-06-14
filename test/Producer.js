@@ -38,7 +38,7 @@ producer.init(function(){
         MQMsg = new MQMessage('RMQTopicTest',  //topic
             'TagC',   //tag
             'OrderID001',   //key
-            'Hello, RocketMQ! I am 陆钢');  //body
+            'Hello, RocketMQ! I am 陆心源');  //body
         logger.debug("Going to send message: " + MQMsg.tostr());
         producer.send(MQMsg, function (sendResult) {
             if (sendResult)

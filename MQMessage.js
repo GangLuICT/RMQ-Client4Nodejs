@@ -6,6 +6,7 @@
  */
 "use strict";
 
+var iconv = require('iconv-lite');	//char encoding/decoding
 var settings = require("./settings_MQ");   //配置信息
 var logger = settings.logger;
 
@@ -26,8 +27,9 @@ var MQMessage = function(topic, tags, keys, body){
     this.tags = tags;
     this.keys = keys;
     this.body = body;
-    var byteArray = java.newArray("byte", this.body.split('').map(function(c) { return java.newByte(String.prototype.charCodeAt(c)); }));	//生成byte array的固定方式！
-    //var byteArray = new Buffer(this.body, settings.MsgBodyEncoding);	//Buffer方式不work
+    var buffer = iconv.encode(this.body, settings.MsgBodyEncoding);	//string to encoded Buffer
+    var byteArray = java.newArray("byte", buffer.toJSON().map(function(c) { return java.newByte(c); }));	//从Buffer生成byte array的固定方式！ 要先转换为Byte数组，也就是toJSON
+    //var byteArray = java.newArray("byte", this.body.split('').map(function(c) { return java.newByte(String.prototype.charCodeAt(c)); }));	//从string生成byte array的固定方式！
     //sync methods:
     this.msg = new Message(this.topic, this.tags, this.keys, byteArray); //string to bytes
     //this.msg = java.newInstanceSync("com.alibaba.rocketmq.common.message.Message", this.topic, this.tags, this.keys, byteArray); //string to bytes
