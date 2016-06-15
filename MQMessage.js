@@ -90,7 +90,7 @@ var ConsumeConcurrentlyStatus = {
     //'RECONSUME_LATER': 1,  // Failure consumption,later try to consume
     'RECONSUME_LATER': CONSUMECONCURRENTLYSTATUS.RECONSUME_LATER
 };
-exports.ConsumeFromWhere = ConsumeFromWhere;
+exports.ConsumeConcurrentlyStatus = ConsumeConcurrentlyStatus;
 
 // PushConsumer消费后的返回值(顺序消费时)
 var ConsumeOrderlyStatus ={

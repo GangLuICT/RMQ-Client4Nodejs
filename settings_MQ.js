@@ -19,6 +19,7 @@ var logger = new (winston.Logger)({
             level: 'error'
         }),
         new winston.transports.File({
+            handleExceptions: true,
             filename: __dirname + '/rmq.log',
             json: false,
             timestamp: true,

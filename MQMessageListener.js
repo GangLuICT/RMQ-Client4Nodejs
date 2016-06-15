@@ -7,26 +7,34 @@
 
 "use strict";
 
+var iconv = require('iconv-lite');
+
 var settings = require("./settings_MQ");   //配置信息
 var logger = settings.logger;
 var moment = require('moment'); //时间
 
-var MQM = require("../MQMessage");
+var java = require("java");
+var Thread = java.import("java.lang.Thread");
+
+var MQM = require("./MQMessage");
 var ConsumeConcurrentlyStatus = MQM.ConsumeConcurrentlyStatus;
 var ConsumeOrderlyStatus = MQM.ConsumeOrderlyStatus;
 
 var MessageListenerConcurrently = function () {};
-MessageListenerConcurrently.prototype.consumeMessage = function (msgs, context) {
-    logger.debug("Into consumerMessage of MessageListenerConcurrently");
+MessageListenerConcurrently.prototype.consumeMessage = function (_msgs, context) {
+    var msgs = _msgs.toArraySync();
+    logger.debug("Into consumeMessage of MessageListenerConcurrently");
+    //console.info("Into consumeMessage of MessageListenerConcurrently");
     //msg = msgs.get(JInt(0))
     msgs.forEach(function (msg) {
-        var topic = msg.getTopic();
-        var tags = msg.getTags();
+        var topic = msg.getTopicSync();
+        var tags = msg.getTagsSync();
         //var bodybytes = new Buffer(msg.getBody());
         //var body = bodybytes.toString(settings.MsgBodyEncoding);  //byte to string
-        var body = msg.getBody().toString(settings.MsgBodyEncoding);
+        //var body = msg.getBodySync().toString(settings.MsgBodyEncoding);
+        var body = iconv.decode(new Buffer(msg.getBodySync()), settings.MsgBodyEncoding);
 
-        logger.debug(msg.toString());
+        logger.debug(msg.toStringSync());
         // In Python 2.x, bytes is just an alias for str. 所以bytes解码时要注意了, msg.body.decode会出错(bytes没有decode方法)！
         //logger.debug("Message body: " + str(msg.getBody()))
         //logger.debug("Message body: " + str(msg.getBody()).decode(settings.MsgBodyEncoding))
@@ -54,19 +62,34 @@ MessageListenerConcurrently.prototype.consumeMessage = function (msgs, context) 
             logger.debug("Got message with UNKNOWN topic " + topic);
         }
     });
-    return ConsumeConcurrentlyStatus['CONSUME_SUCCESS'];
+
+    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
 };
+
+//proxy test
+//var msgListenerConcurrentlyProxy = java.newProxy("com.alibaba.rocketmq.client.consumer.listener.MessageListenerConcurrently", {
+//    consumeMessage: function(_msgs, context) {
+//    console.info("Into consumeMessage of MessageListenerConcurrently");
+//        return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+//    }
+//});
+
+//实现 与 类代理
+var msgListenerConcurrently = new MessageListenerConcurrently();
+var msgListenerConcurrentlyProxy = java.newProxy("com.alibaba.rocketmq.client.consumer.listener.MessageListenerConcurrently", msgListenerConcurrently);
+exports.msgListenerConcurrentlyProxy = msgListenerConcurrentlyProxy;
 
 var MessageListenerOrderly = function () {
     this.consumeTimes = java.newInstanceSync("java.util.concurrent.atomic.AtomicLong", 0);
 };
-MessageListenerConcurrently.prototype.consumeMessage = function (msgs, context) {
+MessageListenerOrderly.prototype.consumeMessage = function (_msgs, context) {
+    var msgs = _msgs.toArraySync();
     context.setAutoCommitSync(false);
-    logger.debug(java.lang.Thread.currentThread().getName() + " Receive New Messages: " + msgs.toString())
+    logger.debug(Thread.currentThreadSync().getNameSync() + " Receive New Messages: " + msgs.toString())
     //TODO: msgs.toString()可能需要改成for msg in msgs: msg.toString()
 
-    self.consumeTimes.incrementAndGetSync();
-    var consumeTimes = self.consumeTimes.get();
+    this.consumeTimes.incrementAndGetSync();
+    var consumeTimes = this.consumeTimes.getSync();
     //print consumeTimes
     //print type(consumeTimes)
 
@@ -89,13 +112,7 @@ MessageListenerConcurrently.prototype.consumeMessage = function (msgs, context) 
     }
 };
 
-
-//实现 与 类代理
-var msgListenerConcurrently = new MessageListenerConcurrently();
-//JProxy("MessageListenerConcurrently", inst = msgListenerConcurrently)
-var msgListenerConcurrentlyProxy = java.newProxy("com.alibaba.rocketmq.client.consumer.listener.MessageListenerConcurrently", msgListenerConcurrently);
-
-
 //实现 与 类代理
 var msgListenerOrderly = new MessageListenerOrderly();
 var msgListenerOrderlyProxy = java.newProxy("com.alibaba.rocketmq.client.consumer.listener.MessageListenerOrderly", msgListenerOrderly);
+exports.msgListenerOrderlyProxy = msgListenerOrderlyProxy;

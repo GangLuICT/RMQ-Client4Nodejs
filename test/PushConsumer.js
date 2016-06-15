@@ -34,7 +34,7 @@ consumer.init();
 
 consumer.setMessageModel(MessageModel['CLUSTERING']);   // 默认是CLUSTERING
 
-consumer.subscribe("RMQTopicTest", "TagB");
+consumer.subscribe("RMQTopicTest", "TagC");
 
 consumer.setConsumeFromWhere(ConsumeFromWhere['CONSUME_FROM_LAST_OFFSET']);
 
@@ -43,8 +43,13 @@ consumer.registerMessageListener(msgListenerOrderlyProxy);
 
 consumer.start();
 
-while(true){
-    setTimeout(function(){}, 1000);	//睡眠1秒
-}
+setTimeout(function(){
 
-consumer.shutdown();
+}, 100000);
+
+process.nextTick(function(){
+console.log("延迟下一个tick执行");
+});
+//}
+
+//consumer.shutdown();
