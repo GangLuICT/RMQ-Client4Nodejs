@@ -14,6 +14,7 @@ var java = require("java");
 
 var Message = java.import('com.alibaba.rocketmq.common.message.Message');
 // enum classes:
+var SENDSTATUS = java.import('com.alibaba.rocketmq.client.producer.SendStatus');
 var PULLSTATUS = java.import('com.alibaba.rocketmq.client.consumer.PullStatus');
 var CONSUMEFROMWHERE = java.import('com.alibaba.rocketmq.common.consumer.ConsumeFromWhere');
 var CONSUMECONCURRENTLYSTATUS = java.import('com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus');
@@ -56,6 +57,20 @@ var PullStatus = {
     'OFFSET_ILLEGAL': PULLSTATUS.OFFSET_ILLEGAL
 };
 exports.PullStatus = PullStatus;
+
+
+// PullResult的返回结果
+var SendStatus = {
+    //'SEND_OK': 0,
+    'SEND_OK': SENDSTATUS.SEND_OK,
+    //'FLUSH_DISK_TIMEOUT': 1,
+    'FLUSH_DISK_TIMEOUT': SENDSTATUS.FLUSH_DISK_TIMEOUT,
+    //'FLUSH_SLAVE_TIMEOUT': 2,
+    'FLUSH_SLAVE_TIMEOUT': SENDSTATUS.FLUSH_SLAVE_TIMEOUT,
+    //'SLAVE_NOT_AVAILABLE': 3   
+    'SLAVE_NOT_AVAILABLE': SENDSTATUS.SLAVE_NOT_AVAILABLE
+};
+exports.SendStatus = SendStatus;
 
 // PushConsumer消费时选择第一次订阅时的消费位置
 var ConsumeFromWhere = {
