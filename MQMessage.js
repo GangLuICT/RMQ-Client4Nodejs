@@ -29,7 +29,8 @@ var MQMessage = function(topic, tags, keys, body){
     this.keys = keys;
     this.body = body;
     var buffer = iconv.encode(this.body, settings.MsgBodyEncoding);	//string to encoded Buffer
-    var byteArray = java.newArray("byte", buffer.toJSON().map(function(c) { return java.newByte(c); }));	//从Buffer生成byte array的固定方式！ 要先转换为Byte数组，也就是toJSON
+    //node的较新版本中的buffer.toJSON()返回的是{type, data}的tuple;旧版本中直接返回的是data(Byte数组)。
+    var byteArray = java.newArray("byte", buffer.toJSON().data.map(function(c) { return java.newByte(c); }));	//从Buffer生成byte array的固定方式！ 要先转换为Byte数组，也就是toJSON
     //var byteArray = java.newArray("byte", this.body.split('').map(function(c) { return java.newByte(String.prototype.charCodeAt(c)); }));	//从string生成byte array的固定方式！
     //sync methods:
     this.msg = new Message(this.topic, this.tags, this.keys, byteArray); //string to bytes
