@@ -29,7 +29,7 @@ var msgListenerOrderlyProxy = MQML.msgListenerOrderlyProxy;
 
 var MQPushConsumer = require("../MQPushConsumer");
 
-var consumer = new MQPushConsumer('MQClient4Python-Consumer', 'jfxr-7:10911;jfxr-6:10911');
+var consumer = new MQPushConsumer('MQClient4Python-Consumer', 'jfxr-7:9876;jfxr-6:9876');
 consumer.init();
 
 consumer.setMessageModel(MessageModel['CLUSTERING']);   // 默认是CLUSTERING
