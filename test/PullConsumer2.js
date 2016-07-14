@@ -27,19 +27,17 @@ var PullStatus = MQM.PullStatus;
 
 var MQPullConsumer = require("../MQPullConsumer");
 
-var consumer = new MQPullConsumer('MQClient4Python-Consumer', 'jfxr-7:9876;jfxr-6:9876');
+var consumer = new MQPullConsumer('RMQ_Con_IOS_2-BENCH', '192.168.1.201:9876;192.168.1.204:9876');
 consumer.init();
 consumer.start();
 
-consumer.setPullHandler("FANSHOP-BENCH", "CNotify_IOS_2", pullHandler.consumeMessage1);
+consumer.setPullHandler("FANSHOP-BENCH", "CNotify_IOS_2", consumeMessage1);
 
 consumer.pullLoop();
 
-while(true){
-   setTimeout(function(){
-        consumer.shutdown();
-   }, 1000000);	//睡眠1秒
-}
+setTimeout(function(){
+     consumer.shutdown();
+}, 10000000);	//睡眠1秒
 
 
 function consumeMessage1(_msgs) {
@@ -48,8 +46,8 @@ function consumeMessage1(_msgs) {
     //发送失败、重连操作!
     //TODO: deviceToken要是失效/错误? 设备端的检查=>避免消息误发
     var msgs = _msgs.toArraySync();
-    console.log("Calling consumeMessage of MessageListenerConcurrently1");
-    //console.log("11" + ConsumeConcurrentlyStatus.RECONSUME_LATER);
+    logger.debug("Calling consumeMessage of PullConsumer");
+    //logger.debug("11" + ConsumeConcurrentlyStatus.RECONSUME_LATER);
     //msg = msgs.get(JInt(0))
     msgs.forEach(function (msg) {
         var topic = msg.getTopicSync();
@@ -72,7 +70,7 @@ function consumeMessage1(_msgs) {
             //只有在pushNotification本身执行失败的情况下才会返回消费失败
 
         } else {// 错误的Tag
-            logger.error("Error: expecting message with topic " + config.OptConsumer1.Topic + " and tags " + config.OptConsumer1.Tags
+            logger.error("Error: expecting message with topic " + consumer.topic + " and tags " + consumer.tags
                 + ", but got topic " + topic + " and tags " + tags);
             //return ConsumeConcurrentlyStatus.RECONSUME_LATER;
         }

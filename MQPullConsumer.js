@@ -10,6 +10,7 @@ var settings = require("./settings_MQ");   //配置信息
 var logger = settings.logger;
 var moment = require('moment'); //时间
 
+var MQM = require("./MQMessage");
 var PullStatus = MQM.PullStatus;
 
 var java = require("java");
@@ -26,8 +27,11 @@ var MQPullConsumer = function(groupName, namesrvAddr) {
     this.instanceName = moment().format("x");  //毫秒值作为instance name，默认返回string
 
     this.mqs = undefined;
-    this.offseTable = {};    // map of message queue id to queue offset
+    this.offseTable = {'0': 3500};    // map of message queue id to queue offset
 
+    this.topic = undefined;
+    this.tags = undefined;
+    this.consumeMessage = undefined;
 };
 
 //"""批量设置一些基本项(为了尽可能少实现这些API接口,如以后有需要,可以逐个移出init)"""
@@ -109,7 +113,7 @@ MQPullConsumer.prototype.setPullHandler = function (topic, tags, consumeMessage)
 MQPullConsumer.prototype.pullLoop = function(){
     var self = this;
     //获取所有消息队列,返回值存储到consumer.mqs
-    self.fetchSubscribeMessageQueues(this.topic, function(){
+    self.fetchSubscribeMessageQueues(self.topic, function(){
         //TODO:
         //    1. fetchSubscribeMessageQueues可能返回异常：Can not find Message Queue for this topic
         //       如果不存在Topic，则创建topic：createTopic(String key, String newTopic, int queueNum)
@@ -132,18 +136,19 @@ MQPullConsumer.prototype.pullLoop = function(){
     });
 };
 
-function pullMessagesAsync(consumer, mq) {
+function pullMessagesAsync(self, mq) {
     //var pullResult = self.pullBlockIfNotFound(mq, '', self.getMessageQueueOffset(mq), settings.pullMaxNums);
-    consumer.pullBlockIfNotFoundAsync(mq, this.topic, consumer.getMessageQueueOffset(mq), settings.pullMaxNums, function (pullResult) {
-        pullMessagesAsync(consumer, mq);    //继续异步调用、拉取消息
+    logger.debug("Pulling from message with tags: " + self.tags); 
+    self.pullBlockIfNotFoundAsync(mq, self.tags, self.getMessageQueueOffset(mq), settings.pullMaxNums, function (pullResult) {
         if (pullResult) {
-            consumer.putMessageQueueOffset(mq, pullResult.getNextBeginOffsetSync());
+            self.putMessageQueueOffset(mq, pullResult.getNextBeginOffsetSync());
+            pullMessagesAsync(self, mq);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
             var pullStatus = PullStatus[pullResult.getPullStatusSync().toString()];	// JAVA中的enum对应到Python中没有转换为Int，enum对象转换为string的时候是其枚举值的名字，而不是enum的值（0,1...）！
             if (pullStatus == PullStatus['FOUND']) {
                 logger.debug('Found');
                 logger.debug(pullResult.toString());
                 var msgList = pullResult.getMsgFoundListSync();
-                this.consumeMessage(msgList);
+                self.consumeMessage(msgList);
             } else if (pullStatus == PullStatus['NO_NEW_MSG']) {
                 logger.debug('NO_NEW_MSG');
             } else if (pullStatus == PullStatus['NO_MATCHED_MSG']) {
@@ -154,7 +159,8 @@ function pullMessagesAsync(consumer, mq) {
                 logger.error('Wrong pull status: ' + pullStatus.toString());
             }
         } else {
-            logger.debug('This pulling does not get any result!');
+            logger.error('This pulling does not get any result!');
+            pullMessagesAsync(self, mq);    //继续异步调用、拉取消息
         }
     });
 }

@@ -23,28 +23,23 @@ var MQMessage = MQM.MQMessage;
 
 var MQProducer = require("../MQProducer");
 
-var producer = new MQProducer('MQClient4Python-Producer', 'jfxr-7:9876;jfxr-6:9876');
+var producer = new MQProducer('MQClient4Python-Producer', 's001:9876;s004:9876');
 producer.init(function(){
     producer.start(); // start和shutdown是同步执行的，异常捕捉在外侧进行，封装类里面没有使用try catch
-    var MQMsg = new MQMessage('RMQTopicTest',  //topic
-        'TagB',   //tag
+for (var j = 0; j < 1; j++) {
+    var MQMsg = new MQMessage('FANSHOP-BENCH',  //topic
+        'CNotify_IOS_2',   //tag
         'OrderID001',   //key
         'Hello, RocketMQ!');  //body
     logger.debug("Going to send message: " + MQMsg.tostr());
-    producer.send(MQMsg, function (sendResult) {
-        if (sendResult)
-            logger.debug("Message sent result: " + sendResult.toString());
-        //顺序方式发送第二条消息
-        MQMsg = new MQMessage('RMQTopicTest',  //topic
-            'TagC',   //tag
-            'OrderID001',   //key
-            'Hello, RocketMQ! I am 陆心源');  //body
-        logger.debug("Going to send message: " + MQMsg.tostr());
+    for (var i = 0; i < 10; i++) {
         producer.send(MQMsg, function (sendResult) {
-            if (sendResult)
+            if (sendResult) {
                 logger.debug("Message sent result: " + sendResult.toString());
+            }
         });
-    });
+    }
+}
 });
 
 //producer.shutdown();
