@@ -103,6 +103,16 @@ MQPullConsumer.prototype.putMessageQueueOffset = function (mq, offset) {
     this.offseTable[mq.getQueueIdSync()] = offset;
 };
 
+//读取offseTable
+MQPullConsumer.prototype.getMessageQueueOffsetTable = function () {
+    return this.offseTable;
+};
+
+//设置offseTable
+MQPullConsumer.prototype.setMessageQueueOffsetTable = function (offsets) {
+    this.offseTable = offsets;
+};
+
 MQPullConsumer.prototype.setPullHandler = function (topic, tags, consumeMessage){
     this.topic = topic;
     this.tags = tags;
