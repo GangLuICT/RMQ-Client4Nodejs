@@ -44,8 +44,8 @@ var logger = new (winston.Logger)({
 /*
  * JAVA options
  */
-//var RMQClientJAR = '/home/deploy/rocketmq/alibaba-rocketmq/lib/';
-var RMQClientJAR = '/home/lugang/rocketmq/RocketMQ/target/alibaba-rocketmq-3.2.6-alibaba-rocketmq/alibaba-rocketmq/lib/'
+var RMQClientJAR = '/home/deploy/rocketmq/alibaba-rocketmq/lib/';
+//var RMQClientJAR = '/home/lugang/rocketmq/RocketMQ/target/alibaba-rocketmq-3.2.6-alibaba-rocketmq/alibaba-rocketmq/lib/'
 var JAVA_EXT_DIRS = RMQClientJAR;
 //JVM_OPTIONS = '-Xms32m -Xmx256m -mx256m -Xrs';
 var JVM_OPTIONS = ['-Xms32m', '-Xmx256m', '-Xrs', '-Djava.ext.dirs=' + RMQClientJAR];
