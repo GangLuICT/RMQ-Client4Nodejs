@@ -20,11 +20,14 @@ var DefaultMQPullConsumer= java.import('com.alibaba.rocketmq.client.consumer.Def
 //var PullResult = java.import('com.alibaba.rocketmq.client.consumer.PullResult');
 //var MessageQueue = java.import('com.alibaba.rocketmq.common.message.MessageQueue');
 
-var MQPullConsumer = function(groupName, namesrvAddr) {
+var MQPullConsumer = function(groupName, namesrvAddr, instanceName) {
     this.consumer = undefined;    //初始化放在了init函数中
     this.groupName = groupName;
     this.namesrvAddr = namesrvAddr;
-    this.instanceName = moment().format("x");  //毫秒值作为instance name，默认返回string
+    if (!instanceName)
+        this.instanceName = moment().format("x");  //毫秒值作为instance name，默认返回string
+    else
+        this.instanceName = instanceName;
 
     this.mqs = undefined;
     this.offseTable = {'0': 3500};    // map of message queue id to queue offset
@@ -110,7 +113,11 @@ MQPullConsumer.prototype.getMessageQueueOffsetTable = function () {
 
 //设置offseTable
 MQPullConsumer.prototype.setMessageQueueOffsetTable = function (offsets) {
-    this.offseTable = offsets;
+    if (!offsets) {
+        this.offseTable = {};
+    } else {
+        this.offseTable = offsets;
+    }
 };
 
 MQPullConsumer.prototype.setPullHandler = function (topic, tags, consumeMessage){
@@ -133,9 +140,10 @@ MQPullConsumer.prototype.pullLoop = function(){
         for (var mqid in self.mqs) {
             //consumer.mqs.forEach(function(mq){
             var mq = self.mqs[mqid];
-            logger.debug("Pulling from message queue: " + mq.getQueueIdSync());
+            var mqQueueId = mq.getQueueIdSync();
+            logger.debug("Pulling from message queue: " + mqQueueId);
             try {
-                pullMessagesAsync(self, mq);
+                pullMessagesAsync(self, mq, mqQueueId);
             } catch (ex) {
                 if (ex.cause)	// Exception from node-java
                     logger.error(ex.cause.getMessageSync());
@@ -146,19 +154,20 @@ MQPullConsumer.prototype.pullLoop = function(){
     });
 };
 
-function pullMessagesAsync(self, mq) {
+function pullMessagesAsync(self, mq, mqQueueId) {
     //var pullResult = self.pullBlockIfNotFound(mq, '', self.getMessageQueueOffset(mq), settings.pullMaxNums);
     logger.debug("Pulling from message with tags: " + self.tags); 
     self.pullBlockIfNotFoundAsync(mq, self.tags, self.getMessageQueueOffset(mq), settings.pullMaxNums, function (pullResult) {
         if (pullResult) {
-            self.putMessageQueueOffset(mq, pullResult.getNextBeginOffsetSync());
-            pullMessagesAsync(self, mq);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
+            var nextBeginOffset = pullResult.getNextBeginOffsetSync();
+            self.putMessageQueueOffset(mq, nextBeginOffset);
+            pullMessagesAsync(self, mq, mqQueueId);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
             var pullStatus = PullStatus[pullResult.getPullStatusSync().toString()];	// JAVA中的enum对应到Python中没有转换为Int，enum对象转换为string的时候是其枚举值的名字，而不是enum的值（0,1...）！
             if (pullStatus == PullStatus['FOUND']) {
                 logger.debug('Found');
                 logger.debug(pullResult.toString());
                 var msgList = pullResult.getMsgFoundListSync();
-                self.consumeMessage(msgList);
+                self.consumeMessage(msgList, mqQueueId, nextBeginOffset);
             } else if (pullStatus == PullStatus['NO_NEW_MSG']) {
                 logger.debug('NO_NEW_MSG');
             } else if (pullStatus == PullStatus['NO_MATCHED_MSG']) {

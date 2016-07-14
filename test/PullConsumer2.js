@@ -40,7 +40,7 @@ setTimeout(function(){
 }, 10000000);	//睡眠1秒
 
 
-function consumeMessage1(_msgs) {
+function consumeMessage1(_msgs, mqQueueId, nextBeginOffset) {
     //操作流程:
     //   直接推送, 无须存数据库操作、无须查找
     //发送失败、重连操作!
