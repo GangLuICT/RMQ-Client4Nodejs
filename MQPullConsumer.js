@@ -60,16 +60,17 @@ MQPullConsumer.prototype.shutdown = function () {
 //同步的方式调用,外部函数名称还是叫pullBlockIfNotFound
 //调用函数后加Sync
 MQPullConsumer.prototype.pullBlockIfNotFound = function (mq, subExpression, offset, maxNums) {
-    var pullResult = this.consumer.pullBlockIfNotFoundSync(mq, subExpression, this.getMessageQueueOffset(mq), maxNums);
+    var pullResult = this.consumer.pullBlockIfNotFoundSync(mq, subExpression, offset, maxNums);
     //callback && callback(pullResult);
     return pullResult;
 };
 
 //异步的方式调用,外部函数名称改成了pullBlockIfNotFoundAsync
 MQPullConsumer.prototype.pullBlockIfNotFoundAsync = function (mq, subExpression, offset, maxNums, callback) {
-    this.consumer.pullBlockIfNotFound(mq, subExpression, this.getMessageQueueOffset(mq), maxNums, function(err, result){
+    this.consumer.pullBlockIfNotFound(mq, subExpression, Number(offset), Number(maxNums), function(err, result){
         if (err) {
             logger.error('Some err occurs when pulling messages. Please look up the exceptions reported!');
+            logger.error(err);
             callback && callback(undefined);
         } else {
             callback && callback(result);
@@ -95,6 +96,7 @@ MQPullConsumer.prototype.setConsumerTimeoutMillisWhenSuspend = function (consume
 //获取某个MQ中的当前消息的offset
 MQPullConsumer.prototype.getMessageQueueOffset = function (mq) {
     var haskey = this.offseTable[mq.getQueueIdSync()];
+    console.log('Get message queue offset: ' + mq.getQueueIdSync() + ' ' + haskey);
     if (haskey === undefined)
         return 0;
     else
@@ -104,6 +106,10 @@ MQPullConsumer.prototype.getMessageQueueOffset = function (mq) {
 //设置某个MQ中的当前消息的offset(更新后的值)
 MQPullConsumer.prototype.putMessageQueueOffset = function (mq, offset) {
     this.offseTable[mq.getQueueIdSync()] = offset;
+};
+
+MQPullConsumer.prototype.updateConsumeOffset = function (mq) {
+    this.consumer.updateConsumeOffsetSync(mq, Number(this.getMessageQueueOffset(mq)));
 };
 
 //读取offseTable
@@ -118,6 +124,7 @@ MQPullConsumer.prototype.setMessageQueueOffsetTable = function (offsets) {
     } else {
         this.offseTable = offsets;
     }
+    console.log(JSON.stringify(this.offseTable));
 };
 
 MQPullConsumer.prototype.setPullHandler = function (topic, tags, consumeMessage){
@@ -142,6 +149,7 @@ MQPullConsumer.prototype.pullLoop = function(){
             var mq = self.mqs[mqid];
             var mqQueueId = mq.getQueueIdSync();
             logger.debug("Pulling from message queue: " + mqQueueId);
+            self.updateConsumeOffset(mq);
             try {
                 pullMessagesAsync(self, mq, mqQueueId);
             } catch (ex) {
