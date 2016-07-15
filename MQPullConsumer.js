@@ -96,7 +96,6 @@ MQPullConsumer.prototype.setConsumerTimeoutMillisWhenSuspend = function (consume
 //获取某个MQ中的当前消息的offset
 MQPullConsumer.prototype.getMessageQueueOffset = function (mq) {
     var haskey = this.offseTable[mq.getQueueIdSync()];
-    console.log('Get message queue offset: ' + mq.getQueueIdSync() + ' ' + haskey);
     if (haskey === undefined)
         return 0;
     else
@@ -124,7 +123,7 @@ MQPullConsumer.prototype.setMessageQueueOffsetTable = function (offsets) {
     } else {
         this.offseTable = offsets;
     }
-    console.log(JSON.stringify(this.offseTable));
+    logger.debug(JSON.stringify(this.offseTable));
 };
 
 MQPullConsumer.prototype.setPullHandler = function (topic, tags, consumeMessage){
