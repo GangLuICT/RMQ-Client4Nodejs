@@ -163,7 +163,7 @@ MQPullConsumer.prototype.pullLoop = function(){
 
 function pullMessagesAsync(self, mq, mqQueueId) {
     //var pullResult = self.pullBlockIfNotFound(mq, '', self.getMessageQueueOffset(mq), settings.pullMaxNums);
-    logger.debug("Pulling from message with tags: " + self.tags); 
+    logger.debug("Pulling message from queue " + mqQueueId + " with tags: " + self.tags); 
     self.pullBlockIfNotFoundAsync(mq, self.tags, self.getMessageQueueOffset(mq), settings.pullMaxNums, function (pullResult) {
         if (pullResult) {
             var nextBeginOffset = pullResult.getNextBeginOffsetSync();
