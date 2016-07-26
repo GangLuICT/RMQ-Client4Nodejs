@@ -63,6 +63,7 @@ var MsgBodyEncoding = 'utf-8';
  */
 var settings = {
     logger: logger,
+    RMQClientJAR: RMQClientJAR,
     JAVA_EXT_DIRS: JAVA_EXT_DIRS,
     JVM_OPTIONS: JVM_OPTIONS,
     pullMaxNums: pullMaxNums,
