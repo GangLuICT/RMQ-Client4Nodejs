@@ -166,22 +166,33 @@ function pullMessagesAsync(self, mq, mqQueueId) {
     logger.debug("Pulling from message with tags: " + self.tags); 
     self.pullBlockIfNotFoundAsync(mq, self.tags, self.getMessageQueueOffset(mq), settings.pullMaxNums, function (pullResult) {
         if (pullResult) {
-            var nextBeginOffset = pullResult.getNextBeginOffsetSync();
-            self.putMessageQueueOffset(mq, nextBeginOffset);
-            pullMessagesAsync(self, mq, mqQueueId);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
             var pullStatus = PullStatus[pullResult.getPullStatusSync().toString()];	// JAVA中的enum对应到Python中没有转换为Int，enum对象转换为string的时候是其枚举值的名字，而不是enum的值（0,1...）！
             if (pullStatus == PullStatus['FOUND']) {
                 logger.debug('Found');
                 logger.debug(pullResult.toString());
                 var msgList = pullResult.getMsgFoundListSync();
                 self.consumeMessage(msgList, mqQueueId, nextBeginOffset);
+                //消费过程开始后,再拉去下一轮
+                //TODO: 是在consumeMessage之前,还是之后开始下一轮拉取?
+                var nextBeginOffset = pullResult.getNextBeginOffsetSync();
+                self.putMessageQueueOffset(mq, nextBeginOffset);
+                pullMessagesAsync(self, mq, mqQueueId);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
             } else if (pullStatus == PullStatus['NO_NEW_MSG']) {
                 logger.debug('NO_NEW_MSG');
+                //无须更新nextBeginOffset
+                pullMessagesAsync(self, mq, mqQueueId);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
             } else if (pullStatus == PullStatus['NO_MATCHED_MSG']) {
                 logger.debug('NO_MATCHED_MSG');
+                var nextBeginOffset = pullResult.getNextBeginOffsetSync();
+                self.putMessageQueueOffset(mq, nextBeginOffset);
+                pullMessagesAsync(self, mq, mqQueueId);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
             } else if (pullStatus == PullStatus['OFFSET_ILLEGAL']) {
                 logger.debug('OFFSET_ILLEGAL');
+                //无须更新nextBeginOffset
+                //TODO: 避免OFFSET_ILLEGAL的出现
+                pullMessagesAsync(self, mq, mqQueueId);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
             } else {
+                logger.error('PullConsumer stops: get unknown pull status!');
                 logger.error('Wrong pull status: ' + pullStatus.toString());
             }
         } else {
