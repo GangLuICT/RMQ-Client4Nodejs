@@ -163,7 +163,7 @@ MQPullConsumer.prototype.pullLoop = function(){
 
 function pullMessagesAsync(self, mq, mqQueueId) {
     //var pullResult = self.pullBlockIfNotFound(mq, '', self.getMessageQueueOffset(mq), settings.pullMaxNums);
-    logger.debug("Pulling from message with tags: " + self.tags); 
+    logger.debug("Pulling message from queue " + mqQueueId + " with tags: " + self.tags); 
     self.pullBlockIfNotFoundAsync(mq, self.tags, self.getMessageQueueOffset(mq), settings.pullMaxNums, function (pullResult) {
         if (pullResult) {
             var pullStatus = PullStatus[pullResult.getPullStatusSync().toString()];	// JAVA中的enum对应到Python中没有转换为Int，enum对象转换为string的时候是其枚举值的名字，而不是enum的值（0,1...）！
