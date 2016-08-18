@@ -165,6 +165,7 @@ function pullMessagesAsync(self, mq, mqQueueId) {
     //var pullResult = self.pullBlockIfNotFound(mq, '', self.getMessageQueueOffset(mq), settings.pullMaxNums);
     logger.debug("Pulling message from queue " + mqQueueId + " with tags: " + self.tags); 
     self.pullBlockIfNotFoundAsync(mq, self.tags, self.getMessageQueueOffset(mq), settings.pullMaxNums, function (pullResult) {
+        var nextBeginOffset = pullResult.getNextBeginOffsetSync();
         if (pullResult) {
             var pullStatus = PullStatus[pullResult.getPullStatusSync().toString()];	// JAVA中的enum对应到Python中没有转换为Int，enum对象转换为string的时候是其枚举值的名字，而不是enum的值（0,1...）！
             if (pullStatus == PullStatus['FOUND']) {
@@ -174,7 +175,6 @@ function pullMessagesAsync(self, mq, mqQueueId) {
                 self.consumeMessage(msgList, mqQueueId, nextBeginOffset);
                 //消费过程开始后,再拉去下一轮
                 //TODO: 是在consumeMessage之前,还是之后开始下一轮拉取?
-                var nextBeginOffset = pullResult.getNextBeginOffsetSync();
                 self.putMessageQueueOffset(mq, nextBeginOffset);
                 pullMessagesAsync(self, mq, mqQueueId);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
             } else if (pullStatus == PullStatus['NO_NEW_MSG']) {
@@ -183,7 +183,6 @@ function pullMessagesAsync(self, mq, mqQueueId) {
                 pullMessagesAsync(self, mq, mqQueueId);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
             } else if (pullStatus == PullStatus['NO_MATCHED_MSG']) {
                 logger.debug('NO_MATCHED_MSG');
-                var nextBeginOffset = pullResult.getNextBeginOffsetSync();
                 self.putMessageQueueOffset(mq, nextBeginOffset);
                 pullMessagesAsync(self, mq, mqQueueId);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
             } else if (pullStatus == PullStatus['OFFSET_ILLEGAL']) {
