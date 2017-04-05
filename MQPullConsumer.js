@@ -187,8 +187,8 @@ function pullMessagesAsync(self, mq, mqQueueId) {
                 pullMessagesAsync(self, mq, mqQueueId);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
             } else if (pullStatus == PullStatus['OFFSET_ILLEGAL']) {
                 logger.debug('OFFSET_ILLEGAL');
-                //暂时也更新nextBeginOffset
-                self.putMessageQueueOffset(mq, nextBeginOffset);
+                //暂时不更新nextBeginOffset
+                //self.putMessageQueueOffset(mq, nextBeginOffset);
                 //TODO: 避免OFFSET_ILLEGAL的出现
                 pullMessagesAsync(self, mq, mqQueueId);    //继续异步调用、拉取消息,必须在更新完offset之后再执行！
             } else {
